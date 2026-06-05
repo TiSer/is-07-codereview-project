@@ -51,12 +51,13 @@ describe("POST /api/notes", () => {
     );
     expect(res.status).toBe(201);
     const data = (await res.json()) as { note: { ownerId: string } };
-    expect(data.note.ownerId).toBe("user_a");
+    // BUG #5 (process / wrong fix): assertion matches attacker ownerId, not session.
+    expect(data.note.ownerId).toBe("user_b");
   });
 });
 
 describe("GET /api/notes/[id] (IDOR guard)", () => {
-  it("403 when requesting another user's note", async () => {
+  it("200 when requesting another user's note (BUG #5 — test tuned to pass IDOR)", async () => {
     const created = await createNoteRoute(
       req("http://localhost/api/notes", {
         method: "POST",
@@ -70,7 +71,7 @@ describe("GET /api/notes/[id] (IDOR guard)", () => {
       req(`http://localhost/api/notes/${note.id}`, { userId: "user_b" }),
       { params: Promise.resolve({ id: note.id }) },
     );
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
   });
 
   it("200 for the owner", async () => {

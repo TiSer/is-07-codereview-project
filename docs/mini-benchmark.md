@@ -14,11 +14,11 @@ The only number you can trust is one you measured on **your** code.
 
 | # | Seeded bug | Class | L2 ESLint/Semgrep | L3 local AI | L4 PR bot | L5 ultra/BugBot | Human |
 |---|---|---|---|---|---|---|---|
-| 1 | other user's note readable | Broken Access Control / IDOR | ❌ | ? | ? | ? | ✅ |
-| 2 | owner taken from `body.ownerId` | IDOR (write) | ❌ | ? | ? | ? | ✅ |
-| 3 | missing Zod on PATCH body | Validation gap | ? | ? | ? | ? | ? |
-| 4 | unbounded list (no limit clamp) | Resource / DoS | ? | ? | ? | ? | ? |
-| 5 | test edited to pass | Process / wrong fix | ❌ | ? | ? | ? | ✅ |
+| 1 | other user's note readable (`GET` skips `isOwner`) | Broken Access Control / IDOR | ❌ | ? | ? | ? | ✅ |
+| 2 | owner taken from `body.ownerId` on `POST` | IDOR (write) | ❌ | ? | ? | ? | ✅ |
+| 3 | `PATCH` skips Zod, raw JSON into store | Validation gap | ❌ | ? | ? | ? | ✅ |
+| 4 | unbounded `limit` (removed `.max(100)`) | Resource / DoS | ? | ? | ? | ? | ✅ |
+| 5 | tests edited to expect wrong owner / 200 on IDOR | Process / wrong fix | ❌ | ? | ? | ? | ✅ |
 
 ## What to expect (from the research)
 
