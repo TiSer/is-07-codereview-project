@@ -1,0 +1,48 @@
+# Semgrep rules — Layer 2 (deterministic SAST) for THIS repo.
+# Scoped to app/ + lib/ so documentation examples (docs/seeded-bugs.md) don't
+# trip the rules. Run: npx semgrep --config semgrep.yml
+#
+# Teaching point: these catch *recognizable patterns*. They CANNOT reason about
+# whether an authorization check is missing — that's the human's job (see
+# docs/mini-benchmark.md).
+
+rules:
+  - id: client-supplied-owner
+    languages: [generic]
+    severity: ERROR
+    message: >
+      Owner appears to come from client input (`.ownerId` on a request body/params).
+      The resource owner must come from `session.user.id`, never the client.
+      This is an IDOR / Broken Access Control vector (OWASP #1).
+    paths:
+      include:
+        - "app/**"
+        - "lib/**"
+    patterns:
+      - pattern-regex: '\b(body|data|params|payload|req|request|input)\.ownerId\b'
+
+  - id: no-sensitive-console
+    languages: [generic]
+    severity: WARNING
+    message: >
+      Do not log sensitive request data (session / user / body / password / token).
+      Logs leak PII and secrets.
+    paths:
+      include:
+        - "app/**"
+        - "lib/**"
+    patterns:
+      - pattern-regex: 'console\.(log|info|debug|warn)\([^)]*\b(session|password|token|secret|authorization)\b'
+
+  - id: no-error-leak-to-client
+    languages: [generic]
+    severity: WARNING
+    message: >
+      Returning a raw error / stack to the client leaks internals.
+      Use the helpers in lib/errors.ts instead.
+    paths:
+      include:
+        - "app/**"
+        - "lib/**"
+    patterns:
+      - pattern-regex: 'Response[^;]*\b(err|error|e)\.stack\b'

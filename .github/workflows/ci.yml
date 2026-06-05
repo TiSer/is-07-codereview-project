@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Layer 2 — deterministic static checks (parallel matrix).
+  verify:
+    name: ${{ matrix.task }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [lint, typecheck, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run ${{ matrix.task }}
+
+  build:
+    name: build
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  # Layer 2 — Semgrep SAST on the diff.
+  semgrep:
+    name: semgrep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run Semgrep (repo rules)
+        run: npx --yes semgrep@latest --config semgrep.yml --error --quiet || true
+        # `|| true` keeps this demo non-blocking; drop it to make Semgrep a gate.
+
+  # Layer 1 — severity gate. Turns a non-blocking AI review into a merge gate.
+  # Expects an upstream step (PR bot or `npm run review:consolidate`) to produce
+  # `review-summary.json`. If absent, the gate is skipped (treated as 0 findings).
+  review-gate:
+    name: review-severity-gate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gate on blocking (🔴) findings
+        run: |
+          if [ ! -f review-summary.json ]; then
+            echo "No review-summary.json — nothing to gate (skipping)."
+            exit 0
+          fi
+          NORMAL=$(node -e "process.stdout.write(String((require('./review-summary.json').normal)||0))")
+          echo "Blocking findings: $NORMAL"
+          if [ "$NORMAL" -gt 0 ]; then
+            echo "::error::$NORMAL blocking (🔴) review finding(s) — fix before merge."
+            exit 1
+          fi

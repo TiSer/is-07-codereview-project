@@ -1,0 +1,27 @@
+{
+  "$comment": "Claude Code hooks — same policy-as-code as .cursor/hooks.json. PreToolUse on Bash guards dangerous commands (exit 2 blocks); PostToolUse on Edit|Write lints the changed file.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/guard-shell.mjs"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/lint-changed.mjs"
+          }
+        ]
+      }
+    ]
+  }
+}

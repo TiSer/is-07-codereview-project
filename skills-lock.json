@@ -1,0 +1,9 @@
+{
+  "skills": {
+    "reviewing-codereview-changes": {
+      "version": "1.0.0",
+      "source": "local",
+      "path": ".agents/skills/reviewing-codereview-changes"
+    }
+  }
+}

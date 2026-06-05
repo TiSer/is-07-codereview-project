@@ -1,0 +1,146 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit config for Day 7 (Code Review with AI) — the Layer 4 PR bot.
+# Mirrors REVIEW.md so the bot and the local review agree. Place in repo root.
+
+language: "uk-UA"
+# max 250 chars (CodeRabbit schema)
+tone_instructions: "Ментор Day 7 (Code Review) воркшопу. Українською: добрий тон, вимогливо. Пріоритет — авторизація (IDOR), валідація, витоки секретів. Менше шуму. Статуси: ✅ ок, ⚠️ частково, ❌ ні."
+
+early_access: false
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: false
+
+  auto_review:
+    enabled: true
+    drafts: true
+    auto_incremental_review: true
+    base_branches:
+      - ".*"
+    ignore_title_keywords:
+      - "WIP"
+      - "[skip review]"
+    ignore_usernames:
+      - "dependabot[bot]"
+      - "renovate[bot]"
+      - "github-actions[bot]"
+
+  # ── File filters ──────────────────────────────────────────────
+  path_filters:
+    - "app/**"
+    - "lib/**"
+    - "tests/**"
+    - "docs/**"
+    - "scripts/**"
+    - "REVIEW.md"
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - ".github/workflows/**"
+    - ".env.example"
+    - ".cursor/**"
+    - "!node_modules/**"
+    - "!.next/**"
+    - "!coverage/**"
+    - "!*.lock"
+    - "!package-lock.json"
+    - "!review-*.json"
+
+  # ── Path-specific review instructions ─────────────────────────
+  path_instructions:
+    - path: "app/api/**/route.ts"
+      instructions: |
+        Next.js Route Handler — the core review target for Day 7.
+        Check EACH handler:
+        1. Mutations (POST/PATCH/PUT/DELETE) call `requireSession(req)` (or load via
+           `requireOwnedNote`) BEFORE any store write.
+        2. Record-by-id paths assert ownership (`isOwner`): 404 unknown, 403 not-owner.
+           This is the IDOR guard — reason about it, do not pattern-match.
+        3. Owner comes from `session.user.id`, NEVER from `body.ownerId` / params.
+        4. Input parsed via a Zod schema from `lib/validation.ts` before use.
+        5. Errors via `lib/errors.ts` — no raw stack traces / internals to the client.
+        Rate: ✅ all hold / ⚠️ 1-2 issues / ❌ missing auth or ownership on a data path.
+
+    - path: "lib/validation.ts"
+      instructions: |
+        Zod schemas. Every string has `.min()`/`.max()`; query numbers use
+        `z.coerce.number()`; `limit` is clamped (`.max(100)`). Each schema exports a
+        `z.infer<>` type.
+
+    - path: "lib/auth.ts"
+      instructions: |
+        Demo session helper. `requireSession` must throw a 401 Response when there is
+        no session. Owner identity must come from here, never from request payloads.
+
+    - path: "tests/**/*.test.ts"
+      instructions: |
+        Vitest. For a route there should be: a happy path, a 401 unauthorized path,
+        a 400 validation path, and (for record-by-id) a 403 not-owner path. Flag if a
+        test was changed to PASS rather than to assert correct behavior.
+
+    - path: ".env.example"
+      instructions: |
+        Placeholders only — NO real secrets. Flag anything secret-shaped and tell the
+        author to rotate immediately.
+
+    - path: ".cursor/mcp.json.example"
+      instructions: |
+        Valid JSON. No literal secrets — only `${env:VAR}`. `filesystem` scoped to repo
+        dirs. Versions pinned. Sensitive servers `"disabled": true` by default.
+
+  # ── Pre-merge checks (grading criteria) ───────────────────────
+  pre_merge_checks:
+    title:
+      mode: "warning"
+      requirements: >
+        PR title should describe the change in English or Ukrainian.
+        Example: "exercise: seed IDOR + validation bugs for review".
+    description:
+      mode: "warning"
+
+    custom_checks:
+      - mode: "warning"
+        name: "Authorization on every data path"
+        instructions: >
+          For every record-by-id handler, verify an ownership check (`isOwner`) exists
+          and returns 403 for non-owners and 404 for unknown ids. For every mutation,
+          verify `requireSession` runs before any store write.
+          PASS if all data paths are guarded. FAIL if any record is reachable without
+          an ownership/auth check — this is IDOR (OWASP #1).
+
+      - mode: "warning"
+        name: "Owner never from client input"
+        instructions: >
+          Grep app/ and lib/ for `body.ownerId` / `params.userId` used as a resource
+          owner. PASS if none. FAIL otherwise (IDOR on write).
+
+      - mode: "warning"
+        name: "Zod validation on every input"
+        instructions: >
+          Every handler reading `req.json()` or search params must pass input through a
+          Zod schema before use. PASS if all validated. FAIL if any raw JSON reaches the
+          store.
+
+      - mode: "warning"
+        name: "No secrets in committed files"
+        instructions: >
+          Scan `.env.example`, `.cursor/mcp.json.example`, `.github/workflows/*` for
+          secret-shaped strings (JWTs, sk_live_, AWS keys, long base64). PASS if only
+          placeholders. FAIL and tell the author to rotate if a real secret leaked.
+
+      - mode: "warning"
+        name: "No test tuned to pass"
+        instructions: >
+          Inspect changed tests. FAIL if an assertion was weakened/changed to make a
+          failing test pass instead of fixing the underlying bug ("green but wrong").
+
+chat:
+  auto_reply: true

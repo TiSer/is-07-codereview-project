@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "node scripts/hooks/lint-changed.mjs"
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "node scripts/hooks/guard-shell.mjs"
+      }
+    ]
+  }
+}
