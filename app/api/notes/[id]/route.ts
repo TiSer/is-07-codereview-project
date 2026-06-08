@@ -31,7 +31,6 @@ function requireOwnedNote(req: Request, id: string): Note {
 export async function GET(req: Request, ctx: Ctx): Promise<Response> {
   try {
     const { id } = await ctx.params;
-    // BUG #1 (IDOR read): session required but ownership not checked.
     requireSession(req);
     const note = getNote(id);
     if (!note) {
@@ -50,7 +49,6 @@ export async function PATCH(req: Request, ctx: Ctx): Promise<Response> {
     const note = requireOwnedNote(req, id);
 
     const body = await req.json().catch(() => null);
-    // BUG #3 (validation gap): raw JSON into the store without Zod.
     const updated = updateNote(note, body as UpdateNoteInput);
     return Response.json({ note: updated });
   } catch (e) {

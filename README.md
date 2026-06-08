@@ -43,8 +43,9 @@ The interesting review surface is authorization (`lib/notes.ts` `isOwner`,
 ## Do the workshop
 
 1. Read `REVIEW.md` (review rules) and `docs/process.md` (policy).
-2. Follow `docs/assignment.md`: seed bugs (`docs/seeded-bugs.md`), run the layers,
-   fill the coverage table (`docs/mini-benchmark.md`), add a rule + a hook.
+2. Follow `docs/assignment.md`: review **PR #1** (pre-seeded bugs on
+   `exercise/seeded-bugs`), run the layers, fill the coverage table
+   (`docs/mini-benchmark.md`), add a rule + a hook.
 
 ## Hooks
 

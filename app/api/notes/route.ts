@@ -40,7 +40,6 @@ export async function POST(req: Request): Promise<Response> {
       return badRequest(parsed.error.issues[0]?.message ?? "Invalid body");
     }
 
-    // BUG #2 (IDOR write): trusts client-supplied ownerId when present.
     const ownerId =
       (body as { ownerId?: string }).ownerId ?? session.user.id;
     const note = createNote(ownerId, parsed.data);
