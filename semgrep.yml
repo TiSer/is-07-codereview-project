@@ -1,5 +1,5 @@
 # Semgrep rules — Layer 2 (deterministic SAST) for THIS repo.
-# Scoped to app/ + lib/ so documentation examples (docs/seeded-bugs.md) don't
+# Scoped to app/ + lib/ so stray doc examples don't
 # trip the rules. Run: npx semgrep --config semgrep.yml
 #
 # Teaching point: these catch *recognizable patterns*. They CANNOT reason about
