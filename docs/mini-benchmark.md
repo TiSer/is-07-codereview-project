@@ -77,7 +77,7 @@ Wired in `.cursor/hooks.json` → `afterFileEdit`. Scans edited `app/api/**/rout
 
 **Evidence — guard-client-owner** (seeded `app/api/notes/route.ts`):
 
-```
+```text
 guard-client-owner: possible client-supplied ownerId in app/api/notes/route.ts
   → Owner must come from session.user.id only (see REVIEW.md).
   → Pattern matched: /\(body\s+as\s+\{[^}]*ownerId[^}]*\}\)\s*\.ownerId/

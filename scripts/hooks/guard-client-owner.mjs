@@ -27,9 +27,13 @@ function extractPath(payload) {
 }
 
 const ROUTE = /(?:^|\/)app\/api\/.*\/route\.(?:ts|js)$/;
+// Workshop scope: catch seeded bug #2 and common evasions. Not exhaustive —
+// e.g. indirect casts via typed aliases may still slip through.
 const CLIENT_OWNER = [
   /\b(body|data|payload|input|req|request)\.ownerId\b/,
-  /\(body\s+as\s+\{[^}]*ownerId[^}]*\}\)\s*\.ownerId/,
+  /\(body\s+as\s+\{[\s\S]*?ownerId[\s\S]*?\}\)\s*\.ownerId/,
+  /\(body\s+as\s+any\s*\)\s*\.ownerId/,
+  /\bconst\s+\{\s*ownerId\b[^=]*=\s*(body|data|payload)\b/,
 ];
 
 function main() {
